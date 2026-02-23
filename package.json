@@ -13,7 +13,7 @@
   "files": ["dist"],
   "scripts": {
     "build": "tsc; test -f dist/cli.js",
-    "test": "vitest run",
+    "test": "npx vitest run",
     "start": "node dist/cli.js",
     "prepublishOnly": "npm run build"
   },
