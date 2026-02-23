@@ -21,6 +21,6 @@ jobs:
       - name: Install dependencies
         run: npm install
       - name: Build
-        run: npx tsc --skipLibCheck
+        run: ./node_modules/.bin/tsc --skipLibCheck
       - name: Run tests
         run: npm test
