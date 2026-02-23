@@ -1,0 +1,33 @@
+{
+  "name": "stripe-analytics-mcp",
+  "version": "0.1.0",
+  "description": "MCP server that computes SaaS metrics (MRR, churn, revenue by plan) from your Stripe account — the analytics layer Stripe's official MCP doesn't provide",
+  "keywords": ["mcp", "stripe", "analytics", "mrr", "churn", "saas", "metrics"],
+  "license": "MIT",
+  "author": "",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "stripe-analytics-mcp": "dist/cli.js"
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "start": "node dist/cli.js",
+    "prepublishOnly": "npm run build"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.1",
+    "stripe": "^17.5.0",
+    "zod": "^4.3.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "typescript": "^5.7.0",
+    "vitest": "^4.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
