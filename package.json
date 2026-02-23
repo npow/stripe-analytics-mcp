@@ -19,11 +19,11 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.1",
+    "@types/node": "^22.10.0",
     "stripe": "^17.5.0",
     "zod": "^4.3.0"
   },
   "devDependencies": {
-    "@types/node": "^22.10.0",
     "typescript": "^5.7.0",
     "vitest": "^4.0.0"
   },
