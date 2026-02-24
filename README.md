@@ -11,40 +11,6 @@ Ask your AI assistant "how's my business doing?" and get your MRR, churn, failed
 
 You check your Stripe dashboard for MRR, churn, and revenue breakdown every day. Stripe's official MCP server only does operations — create customers, send invoices. It can't tell you what your MRR is. ChartMogul and Baremetrics compute these metrics but cost $100+/month and have no MCP interface. You're switching between your editor and browser tabs just to check a number.
 
-## Quick start
-
-```bash
-STRIPE_SECRET_KEY=sk_test_... npx stripe-analytics-mcp
-```
-
-Then ask your AI assistant:
-
-```
-How's my business doing?
-```
-
-## Install
-
-```bash
-npx stripe-analytics-mcp
-```
-
-Add to your Claude Code / Cursor / Windsurf MCP config:
-
-```json
-{
-  "mcpServers": {
-    "stripe-analytics": {
-      "command": "npx",
-      "args": ["stripe-analytics-mcp"],
-      "env": {
-        "STRIPE_SECRET_KEY": "sk_test_..."
-      }
-    }
-  }
-}
-```
-
 ## The morning check
 
 > "How's my business doing?" / "Morning check" / "What happened overnight?"
@@ -78,7 +44,7 @@ Trials Expiring Soon (3 — $147 potential MRR)
 
 ## Recover failed payments
 
-> "Am I losing money to failed payments?" / "Which customers have payment issues?"
+> "Am I losing money to failed payments?"
 
 Failed payments are the easiest revenue to recover — these customers already want to pay you. Get the list with failure reasons so you can reach out today:
 
@@ -97,39 +63,33 @@ Failed invoices: 3
 
 ## Track MRR growth
 
-> "What's my MRR?" / "How did my MRR change this month?"
+> "How did my MRR change this month?"
 
-See your current MRR snapshot, or drill into the waterfall showing exactly where growth is coming from and where you're leaking:
+See exactly where growth is coming from and where you're leaking:
 
 ```
-MRR Movement
+MRR Movement — Last 30 days
 
-Period: Last 30 days
 Net New MRR: +$840
-
-Breakdown
 - New MRR: +$570 (from new customers)
 - Expansion MRR: +$390 (from upgrades)
 - Contraction MRR: -$49 (from downgrades)
 - Churned MRR: -$71 (from cancellations)
-
-Net: +$840
 ```
 
 ## Watch your trial funnel
 
-The dashboard automatically flags trials expiring within 3 days. These are customers about to decide whether to convert or leave — the highest-leverage moment to intervene.
+The dashboard flags trials expiring within 3 days — customers about to decide whether to convert or leave. The highest-leverage moment to intervene.
 
 ## Understand churn
 
-> "What's my churn rate?" / "Who churned this month?"
+> "What's my churn rate?"
 
-Get both customer churn (% of customers lost) and revenue churn (% of MRR lost) — because losing one $500/mo customer hurts more than losing five $10/mo customers:
+Both customer churn and revenue churn — because losing one $500/mo customer hurts more than losing five $10/mo customers:
 
 ```
-Churn Analysis
+Churn Analysis — Last 30 days
 
-Period: 30 days
 Customer Churn Rate: 3.2%
 Revenue Churn Rate: 1.8%
 Churned Customers: 4
@@ -138,16 +98,44 @@ Churned MRR: $127.00
 
 ## Know which plans work
 
-> "Break down my revenue by plan" / "Which plan makes the most money?"
-
-See which plans carry your business and which are dead weight:
+> "Which plan makes the most money?"
 
 ```
-| Plan      | Subscribers | MRR       | % of Total |
-|-----------|-------------|-----------|------------|
-| Pro       | 28          | $2,744.00 | 64.1%      |
-| Basic     | 35          | $665.00   | 15.5%      |
-| Enterprise| 3           | $871.00   | 20.4%      |
+| Plan       | Subscribers | MRR       | % of Total |
+|------------|-------------|-----------|------------|
+| Pro        | 28          | $2,744.00 | 64.1%      |
+| Basic      | 35          | $665.00   | 15.5%      |
+| Enterprise | 3           | $871.00   | 20.4%      |
+```
+
+## Quick start
+
+```bash
+STRIPE_SECRET_KEY=sk_test_... npx stripe-analytics-mcp
+```
+
+Then ask your AI assistant: "How's my business doing?"
+
+## Install
+
+```bash
+npx stripe-analytics-mcp
+```
+
+Add to your Claude Code / Cursor / Windsurf MCP config:
+
+```json
+{
+  "mcpServers": {
+    "stripe-analytics": {
+      "command": "npx",
+      "args": ["stripe-analytics-mcp"],
+      "env": {
+        "STRIPE_SECRET_KEY": "sk_test_..."
+      }
+    }
+  }
+}
 ```
 
 ## How it works
