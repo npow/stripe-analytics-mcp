@@ -12,19 +12,24 @@ import {
 import { z } from 'zod';
 import Stripe from 'stripe';
 
-import { createStripeClient, fetchAllSubscriptions, fetchCanceledSubscriptions, fetchRecentEvents } from './stripe/client.js';
+import { createStripeClient, fetchAllSubscriptions, fetchCanceledSubscriptions, fetchRecentEvents, fetchFailedInvoices } from './stripe/client.js';
 import { computeMrr } from './metrics/mrr.js';
 import { computeChurn } from './metrics/churn.js';
 import { computeRevenueByPlan } from './metrics/plans.js';
 import { computeSubscriberStats } from './metrics/subscribers.js';
 import { computeRecentChanges } from './metrics/changes.js';
+import { computeDashboard, computeMrrMovement } from './metrics/dashboard.js';
 import {
   mrrToMarkdown,
   churnToMarkdown,
   planBreakdownToMarkdown,
   subscriberStatsToMarkdown,
   changesToMarkdown,
+  dashboardToMarkdown,
+  failedPaymentsToMarkdown,
+  mrrMovementToMarkdown,
 } from './utils/format.js';
+import type { FailedPaymentsResult } from './types.js';
 
 /**
  * Create and configure the MCP server.
@@ -116,6 +121,47 @@ export function createServer(apiKey: string): Server {
               days: {
                 type: 'number',
                 description: 'Number of days to look back (default: 7, min: 1, max: 90)',
+                minimum: 1,
+                maximum: 90,
+              },
+            },
+            required: [],
+          },
+        },
+        {
+          name: 'get_dashboard',
+          description: 'The morning check — get everything important in one call. Returns: current MRR with week-over-week change, MRR movement breakdown (new/expansion/contraction/churn), failed payments needing attention, trials expiring in 3 days, and Quick Ratio. Use this when someone asks "how\'s my business doing?" or "morning check" or "what happened overnight?"',
+          inputSchema: {
+            type: 'object',
+            properties: {},
+            required: [],
+          },
+        },
+        {
+          name: 'get_failed_payments',
+          description: 'Get all failed payment attempts with customer email, amount, failure reason, attempt count, and plan. These are recoverable revenue — money you can get back by reaching out to customers. Shows total revenue at risk.',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              days: {
+                type: 'number',
+                description: 'Number of days to look back (default: 30, min: 1, max: 90)',
+                minimum: 1,
+                maximum: 90,
+              },
+            },
+            required: [],
+          },
+        },
+        {
+          name: 'get_mrr_movement',
+          description: 'MRR waterfall showing how MRR changed over a period: new MRR from new customers, expansion from upgrades, contraction from downgrades, and churn from cancellations. Answers "how did my MRR change this week/month?"',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              period_days: {
+                type: 'number',
+                description: 'Number of days to analyze (default: 7, min: 1, max: 90)',
                 minimum: 1,
                 maximum: 90,
               },
@@ -252,6 +298,53 @@ export function createServer(apiKey: string): Server {
                 text: markdown,
               },
             ],
+          };
+        }
+
+        case 'get_dashboard': {
+          const [subs, canceled, events, failed] = await Promise.all([
+            fetchAllSubscriptions(stripe),
+            fetchCanceledSubscriptions(stripe, 7),
+            fetchRecentEvents(stripe, 7),
+            fetchFailedInvoices(stripe, 30),
+          ]);
+          const result = computeDashboard(subs, canceled, events, failed, 7);
+          return {
+            content: [{ type: 'text', text: dashboardToMarkdown(result) }],
+          };
+        }
+
+        case 'get_failed_payments': {
+          const schema = z.object({
+            days: z.number().min(1).max(90).optional().default(30),
+          });
+          const { days } = schema.parse(args || {});
+          const failedPayments = await fetchFailedInvoices(stripe, days);
+          const totalAtRisk = failedPayments.reduce((sum, fp) => sum + fp.amountCents, 0);
+          const result: FailedPaymentsResult = {
+            failedPayments,
+            totalAtRiskCents: totalAtRisk,
+            totalAtRiskFormatted: `$${(totalAtRisk / 100).toFixed(2)}`,
+            currency: 'usd',
+          };
+          return {
+            content: [{ type: 'text', text: failedPaymentsToMarkdown(result) }],
+          };
+        }
+
+        case 'get_mrr_movement': {
+          const schema = z.object({
+            period_days: z.number().min(1).max(90).optional().default(7),
+          });
+          const { period_days } = schema.parse(args || {});
+          const [subs, canceled, events] = await Promise.all([
+            fetchAllSubscriptions(stripe),
+            fetchCanceledSubscriptions(stripe, period_days),
+            fetchRecentEvents(stripe, period_days),
+          ]);
+          const result = computeMrrMovement(subs, canceled, events, period_days);
+          return {
+            content: [{ type: 'text', text: mrrMovementToMarkdown(result) }],
           };
         }
 

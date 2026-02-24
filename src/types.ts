@@ -140,6 +140,56 @@ export interface RecentChangesResult {
   };
 }
 
+// --- Dashboard types ---
+
+export interface DashboardResult {
+  mrr: MrrResult;
+  mrrMovement: MrrMovementResult;
+  failedPayments: FailedPaymentInfo[];
+  expiringTrials: TrialInfo[];
+  quickRatio: number;  // (new + expansion) / (contraction + churn). >1 = growing
+}
+
+export interface MrrMovementResult {
+  periodDays: number;
+  newMrrCents: number;
+  expansionMrrCents: number;
+  contractionMrrCents: number;
+  churnedMrrCents: number;
+  netNewMrrCents: number;
+  netNewMrrFormatted: string;
+  currency: string;
+}
+
+export interface FailedPaymentInfo {
+  customerEmail: string;
+  customerId: string;
+  amountCents: number;
+  amountFormatted: string;
+  failureReason: string;
+  attemptCount: number;
+  lastAttemptDate: string;
+  subscriptionId: string | null;
+  planName: string | null;
+}
+
+export interface FailedPaymentsResult {
+  failedPayments: FailedPaymentInfo[];
+  totalAtRiskCents: number;
+  totalAtRiskFormatted: string;
+  currency: string;
+}
+
+export interface TrialInfo {
+  customerEmail: string;
+  customerId: string;
+  planName: string;
+  trialEnd: number;
+  daysRemaining: number;
+  mrrIfConverted: number;
+  mrrIfConvertedFormatted: string;
+}
+
 // --- Error types ---
 
 export interface StripeClientError {

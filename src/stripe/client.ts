@@ -11,7 +11,8 @@ import type {
   SubscriptionStatus,
   BillingInterval,
   SubscriptionItemData,
-  DiscountData
+  DiscountData,
+  FailedPaymentInfo,
 } from '../types.js';
 
 /**
@@ -195,8 +196,74 @@ async function fetchCustomerEmails(
 }
 
 /**
+ * Fetch invoices with failed payment attempts.
+ */
+export async function fetchFailedInvoices(
+  stripe: Stripe,
+  days: number = 30
+): Promise<FailedPaymentInfo[]> {
+  try {
+    const cutoff = Math.floor(Date.now() / 1000) - (days * 86400);
+    const results: FailedPaymentInfo[] = [];
+    const customerIdsToResolve = new Set<string>();
+
+    for await (const invoice of stripe.invoices.list({
+      status: 'open',
+      expand: ['data.subscription'],
+      limit: 100,
+    })) {
+      if (invoice.attempted && !invoice.paid && invoice.created >= cutoff) {
+        const custId = typeof invoice.customer === 'string' ? invoice.customer : invoice.customer?.id || '';
+        let email: string | null = null;
+        if (typeof invoice.customer === 'object' && invoice.customer && 'email' in invoice.customer) {
+          email = (invoice.customer as Stripe.Customer).email || null;
+        }
+
+        let planName: string | null = null;
+        let subscriptionId: string | null = null;
+        if (invoice.subscription) {
+          subscriptionId = typeof invoice.subscription === 'string' ? invoice.subscription : invoice.subscription.id;
+          if (typeof invoice.subscription === 'object' && invoice.subscription.items?.data?.[0]) {
+            const item = invoice.subscription.items.data[0];
+            planName = item.price.nickname || item.price.id;
+          }
+        }
+
+        if (!email && custId) customerIdsToResolve.add(custId);
+
+        results.push({
+          customerEmail: email || 'No email',
+          customerId: custId,
+          amountCents: invoice.amount_due,
+          amountFormatted: `$${(invoice.amount_due / 100).toFixed(2)}`,
+          failureReason: (invoice as any).last_finalization_error?.message || invoice.status || 'payment_failed',
+          attemptCount: invoice.attempt_count || 1,
+          lastAttemptDate: new Date((invoice.created) * 1000).toISOString().split('T')[0],
+          subscriptionId,
+          planName,
+        });
+      }
+    }
+
+    // Resolve emails
+    if (customerIdsToResolve.size > 0) {
+      const emails = await fetchCustomerEmails(stripe, customerIdsToResolve);
+      for (const r of results) {
+        if (r.customerEmail === 'No email' && emails.has(r.customerId)) {
+          r.customerEmail = emails.get(r.customerId)!;
+        }
+      }
+    }
+
+    return results;
+  } catch (error) {
+    throw mapStripeError(error);
+  }
+}
+
+/**
  * Fetch subscription-related events from the last N days.
- * 
+ *
  * @param stripe - Stripe client instance
  * @param days - Number of days to look back
  * @returns Array of normalized events
