@@ -5,7 +5,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Node.js 18+](https://img.shields.io/badge/node-18+-blue.svg)](https://nodejs.org/)
 
-Ask your AI assistant "what's my MRR?" and get an accurate answer from your Stripe data.
+Ask your AI assistant "how's my business doing?" and get your MRR, churn, failed payments, and expiring trials in one answer.
 
 ## The problem
 
@@ -20,7 +20,34 @@ STRIPE_SECRET_KEY=sk_test_... npx stripe-analytics-mcp
 Then ask your AI assistant:
 
 ```
-What's my MRR?
+How's my business doing?
+```
+
+You'll get back:
+
+```
+Dashboard — 2026-02-24
+
+MRR: $4,280 (+$120 this week)
+Subscriptions: 42 active, 3 trialing, 1 past due
+
+MRR Movement (last 7 days)
+- New: +$198
+- Expansion: +$49
+- Contraction: -$0
+- Churned: -$127
+- Net: +$120
+
+Quick Ratio: 1.9 (healthy)
+
+Failed Payments (2 — $147 at risk)
+- alice@acme.com — $98 — card_declined — attempt 2
+- bob@startup.io — $49 — insufficient_funds — attempt 1
+
+Trials Expiring Soon (3 — $147 potential MRR)
+- carol@bigco.com — Pro — 2 days left — $49/mo
+- dave@agency.net — Basic — 1 day left — $19/mo
+- eve@freelance.co — Pro — 3 days left — $49/mo
 ```
 
 ## Install
@@ -53,25 +80,54 @@ Add to your Claude Code / Cursor / Windsurf MCP config:
 
 ## Usage
 
-Ask your AI assistant any of these:
+Ask your AI assistant natural questions. It picks the right tool automatically.
 
-**MRR** — "What's my MRR?" returns total MRR, subscription count, and status breakdown (active/trialing/past due).
+**Morning check** — "How's my business doing?" or "Morning check" or "What happened overnight?"
+Returns everything: MRR, movement, failed payments, expiring trials, Quick Ratio.
 
-**Churn** — "What's my churn rate this month?" returns customer churn %, revenue churn %, and churned MRR.
+**MRR** — "What's my MRR?"
+Total MRR, subscription count, status breakdown.
 
-**Revenue by plan** — "Break down my revenue by plan" returns a table of plans with subscriber counts, MRR contribution, and percentage of total.
+**MRR movement** — "How did my MRR change this week?"
+Waterfall: new + expansion - contraction - churn = net new MRR.
 
-**Subscriber stats** — "How many subscribers did I gain this week?" returns active, new, churned, trialing, and past due counts.
+**Failed payments** — "Am I losing money to failed payments?"
+Customer email, amount, failure reason, attempt count. This is money you can recover today.
 
-**Recent changes** — "What happened with subscriptions this week?" lists new signups, cancellations, upgrades, downgrades, and failed payments.
+**Churn** — "What's my churn rate this month?"
+Customer churn %, revenue churn %, churned MRR.
+
+**Revenue by plan** — "Break down my revenue by plan"
+Table of plans with subscriber counts, MRR contribution, percentage of total.
+
+**Subscriber stats** — "How many subscribers did I gain this week?"
+Active, new, churned, trialing, past due counts.
+
+**Recent changes** — "What happened with subscriptions this week?"
+New signups, cancellations, upgrades, downgrades, failed payments.
+
+## Tools
+
+| Tool | What it answers | Inputs |
+|------|----------------|--------|
+| `get_dashboard` | Everything — the morning check | none |
+| `get_mrr` | Current MRR snapshot | none |
+| `get_mrr_movement` | How MRR changed over a period | `period_days` (default: 7) |
+| `get_failed_payments` | Failed payments needing attention | `days` (default: 30) |
+| `get_churn` | Churn rates for a period | `period_days` (default: 30) |
+| `get_revenue_by_plan` | MRR breakdown by plan | none |
+| `get_subscriber_stats` | Subscriber counts and changes | `period_days` (default: 30) |
+| `get_recent_changes` | Recent subscription events | `days` (default: 7) |
 
 ## How it works
 
 The server connects to your Stripe account (read-only) and computes metrics from live subscription data:
 
 - **MRR**: Sums subscription items, normalizes annual/weekly to monthly, applies discounts, excludes trials
-- **Churn**: Counts canceled subscriptions in the period vs. starting subscriber count
-- **Plans**: Groups subscriptions by pricing plan and computes each plan's MRR share
+- **Movement**: Tracks new, expansion, contraction, and churn MRR from events
+- **Quick Ratio**: (New + Expansion) / (Contraction + Churn) — above 1.0 means growing
+- **Failed payments**: Scans open invoices with failed payment attempts
+- **Trials**: Identifies trialing subscriptions expiring within 3 days
 
 All computation is stateless — every query hits Stripe's API fresh. No data is cached or stored.
 
