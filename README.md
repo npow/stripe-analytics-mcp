@@ -3,7 +3,7 @@
 [![CI](https://github.com/npow/stripe-analytics-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/npow/stripe-analytics-mcp/actions/workflows/ci.yml)
 [![npm](https://img.shields.io/npm/v/stripe-analytics-mcp)](https://www.npmjs.com/package/stripe-analytics-mcp)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Node.js 18+](https://img.shields.io/badge/node-18+-blue.svg)](https://nodejs.org/)
+[![Node.js 18+](https://img.shields.io/badge/node-18+-blue.svg)](https://nodejs.org/) [![Docs](https://img.shields.io/badge/docs-mintlify-18a34a?style=flat-square)](https://mintlify.com/npow/stripe-analytics-mcp)
 
 Ask your AI assistant "how's my business doing?" and get your MRR, churn, failed payments, and expiring trials in one answer.
 
